@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+: "${TERRARIA_VERSION:?TERRARIA_VERSION must be set at image build time}"
+
 # Convert version format: 1.4.5 -> 145, 1.4.4.9 -> 1449
 VERSION_NUM=$(echo "${TERRARIA_VERSION}" | tr -d '.')
 
@@ -12,13 +14,13 @@ DL_FILE="/tmp/terraria-server.zip"
 
 echo "Download URL: ${DL_URL}"
 
-curl -L -o "${DL_FILE}" "${DL_URL}"
+curl --fail --location --show-error --output "${DL_FILE}" "${DL_URL}"
 
 # Extract server files
 unzip -q "${DL_FILE}" -d /tmp/terraria
 
 # Move Linux server files to /server
-mv /tmp/terraria/${VERSION_NUM}/Linux/* /server/
+mv "/tmp/terraria/${VERSION_NUM}/Linux/"* /server/
 
 # Copy default config from Windows folder (Linux folder doesn't include it)
 if [ -f "/tmp/terraria/${VERSION_NUM}/Windows/serverconfig.txt" ]; then

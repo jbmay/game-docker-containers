@@ -1,7 +1,7 @@
 # Base image for Windows game servers running via Wine
 # Includes SteamCMD for downloading games and Wine for running Windows binaries
 #
-# Usage: FROM ghcr.io/loganintech/steamcmd-wine:latest
+# Usage: FROM ghcr.io/jbmay/steamcmd-wine:latest
 
 FROM debian:bookworm-slim
 
@@ -39,13 +39,16 @@ RUN dpkg --add-architecture i386 && \
 RUN mkdir -p /opt/steamcmd && \
     cd /opt/steamcmd && \
     curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - && \
-    chmod +x /opt/steamcmd/steamcmd.sh
+    chmod +x /opt/steamcmd/steamcmd.sh && \
+    (/opt/steamcmd/steamcmd.sh +quit || true) && \
+    chmod -R 755 /opt/steamcmd
 
 # Create steam user
 RUN useradd -m -s /bin/bash steam && \
     mkdir -p /home/steam/.wine && \
     mkdir -p /home/steam/server && \
-    chown -R steam:steam /home/steam
+    chown -R steam:steam /home/steam && \
+    chown -R steam:steam /opt/steamcmd
 
 # Set up Wine environment
 ENV WINEARCH=win64

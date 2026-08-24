@@ -1,7 +1,7 @@
 # Base image for native Linux game servers
 # Includes SteamCMD for downloading games
 #
-# Usage: FROM ghcr.io/loganintech/steamcmd:latest
+# Usage: FROM ghcr.io/jbmay/steamcmd:latest
 
 FROM debian:bookworm-slim
 
@@ -27,12 +27,15 @@ ENV LC_ALL=en_US.UTF-8
 RUN mkdir -p /opt/steamcmd && \
     cd /opt/steamcmd && \
     curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - && \
-    chmod +x /opt/steamcmd/steamcmd.sh
+    chmod +x /opt/steamcmd/steamcmd.sh && \
+    (/opt/steamcmd/steamcmd.sh +quit || true) && \
+    chmod -R 755 /opt/steamcmd
 
 # Create steam user
 RUN useradd -m -s /bin/bash steam && \
     mkdir -p /home/steam/server && \
-    chown -R steam:steam /home/steam
+    chown -R steam:steam /home/steam && \
+    chown -R steam:steam /opt/steamcmd
 
 # Add steamcmd to path
 ENV PATH="/opt/steamcmd:${PATH}"
