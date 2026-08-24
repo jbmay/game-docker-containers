@@ -1,8 +1,16 @@
 FROM debian:bookworm-slim
 
-LABEL org.opencontainers.image.source="https://github.com/loganintech/game-docker-containers"
+LABEL org.opencontainers.image.source="https://github.com/jbmay/game-docker-containers"
 LABEL org.opencontainers.image.description="Terraria Vanilla Dedicated Server"
 LABEL org.opencontainers.image.licenses="MIT"
+
+# Keep these defaults in sync with build.env. CI passes the values explicitly
+# and publishes the image as <server-version>-build.<build-tag>.
+ARG SERVER_VERSION=1.4.5.6
+ARG GAME_VERSION=1.4.5.6
+ARG BUILD_TAG=1
+ENV TERRARIA_VERSION=${GAME_VERSION}
+LABEL org.opencontainers.image.version="${SERVER_VERSION}-build.${BUILD_TAG}"
 
 # Install dependencies (no mono needed - Terraria 1.4.4+ has native Linux binary)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -16,8 +24,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN mkdir -p /server /root/.local/share/Terraria/Worlds /config
 
 # Server configuration via environment variables
-# TERRARIA_VERSION is required - e.g., "1.4.5.1"
-ENV TERRARIA_VERSION=""
 ENV WORLD_NAME="world"
 ENV WORLD_SIZE="large"
 ENV DIFFICULTY="master"
@@ -40,6 +46,10 @@ WORKDIR /server
 # Copy scripts
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
 COPY --chmod=755 download-server.sh /download-server.sh
+
+# The server binary is part of the image. Only worlds and configuration are
+# mounted at runtime, so a deployment never needs network access to install it.
+RUN /download-server.sh
 
 # Expose game port
 EXPOSE 7777

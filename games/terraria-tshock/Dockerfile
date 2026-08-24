@@ -1,14 +1,17 @@
 FROM debian:bookworm-slim
 
-LABEL org.opencontainers.image.source="https://github.com/loganintech/game-docker-containers"
+LABEL org.opencontainers.image.source="https://github.com/jbmay/game-docker-containers"
 LABEL org.opencontainers.image.description="Terraria TShock Dedicated Server"
 LABEL org.opencontainers.image.licenses="MIT"
 
-# TShock version - check https://github.com/Pryaxis/TShock/releases
-ARG TSHOCK_VERSION=6.1.0
-ARG TERRARIA_VERSION=1.4.5.6
-ENV TSHOCK_VERSION=${TSHOCK_VERSION}
-ENV TERRARIA_VERSION=${TERRARIA_VERSION}
+# Keep these defaults in sync with build.env. CI passes the values explicitly
+# and publishes the image as <server-version>-build.<build-tag>.
+ARG SERVER_VERSION=6.1.0
+ARG GAME_VERSION=1.4.5.6
+ARG BUILD_TAG=1
+ENV TSHOCK_VERSION=${SERVER_VERSION}
+ENV TERRARIA_VERSION=${GAME_VERSION}
+LABEL org.opencontainers.image.version="${SERVER_VERSION}-build.${BUILD_TAG}"
 
 # Install dependencies and .NET 9 runtime (required by TShock 6.x+)
 RUN apt-get update && apt-get install -y --no-install-recommends \

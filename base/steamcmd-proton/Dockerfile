@@ -7,7 +7,7 @@
 # - Game-specific patches and fixes
 # - Better overall game compatibility
 #
-# Usage: FROM ghcr.io/loganintech/steamcmd-proton:latest
+# Usage: FROM ghcr.io/jbmay/steamcmd-proton:latest
 
 FROM debian:bookworm-slim
 
@@ -62,7 +62,7 @@ RUN mkdir -p /opt/steamcmd && \
     curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - && \
     chmod +x /opt/steamcmd/steamcmd.sh && \
     # Run steamcmd once to download internal binaries and set permissions
-    /opt/steamcmd/steamcmd.sh +quit || true && \
+    (/opt/steamcmd/steamcmd.sh +quit || true) && \
     chmod -R 755 /opt/steamcmd
 
 # Create steam user

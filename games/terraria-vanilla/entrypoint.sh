@@ -5,19 +5,13 @@ echo "=========================================="
 echo "Terraria Vanilla Server"
 echo "=========================================="
 
-# Check if version is set
-if [ -z "${TERRARIA_VERSION}" ]; then
-    echo "ERROR: TERRARIA_VERSION environment variable is required"
-    echo "Example: TERRARIA_VERSION=1.4.5.1"
-    exit 1
-fi
-
 echo "Version: ${TERRARIA_VERSION}"
 
-# Download server if not present
-if [ ! -f "/server/TerrariaServer.exe" ]; then
-    echo "Server not found, downloading..."
-    /download-server.sh
+# The server is installed while building the image. Do not silently download a
+# different release at startup if an image is incomplete.
+if [ ! -x "/server/TerrariaServer" ]; then
+    echo "ERROR: Baked-in server executable not found at /server/TerrariaServer"
+    exit 1
 fi
 
 # Map friendly names to Terraria's expected values

@@ -1,186 +1,54 @@
-# Game Docker Containers
+# Terraria Docker Containers
 
-Docker containers for dedicated game servers, designed for Kubernetes deployment.
+Versioned Terraria dedicated-server images designed for Kubernetes deployment.
+The server binaries are downloaded while the images are built, so containers do
+not need deployment-time network access to install the server.
 
-## Structure
+## Images
 
-```
-.
-├── base/                    # Base images
-│   ├── steamcmd/           # Native Linux game servers
-│   ├── steamcmd-proton/    # Windows game servers via Proton (recommended)
-│   └── steamcmd-wine/      # Windows game servers via Wine (legacy)
-├── games/                   # Game-specific containers
-│   ├── starrupture/        # StarRupture dedicated server
-│   └── voyagers-of-nera/   # Voyagers of Nera dedicated server
-└── .github/workflows/       # CI/CD pipelines
-```
+| Image | Server version | Tag |
+|---|---|---|
+| Vanilla Terraria | 1.4.5.6 | `ghcr.io/jbmay/terraria-vanilla:1.4.5.6-build.1` |
+| TShock | 6.1.0 for Terraria 1.4.5.6 | `ghcr.io/jbmay/terraria-tshock:6.1.0-build.1` |
 
-## Base Images
+Each image's `build.env` is the source of truth for:
 
-### steamcmd
+- `SERVER_VERSION`: the packaged server release
+- `GAME_VERSION`: the compatible Terraria release
+- `BUILD_TAG`: the packaging revision for that release
 
-Base image for native Linux game servers. Includes:
-- Debian Bookworm slim
-- SteamCMD
-- Helper scripts for server updates
+Increment `BUILD_TAG` when rebuilding the same server release after changing
+the image itself.
 
-**Pull:** `ghcr.io/loganintech/steamcmd:latest`
+## Local builds
 
-### steamcmd-proton (Recommended for Windows games)
-
-Base image for Windows game servers running via GE-Proton. **Recommended over Wine for better game compatibility.**
-
-Includes:
-- Debian Bookworm slim
-- SteamCMD
-- GE-Proton (Glorious Eggroll's Proton fork)
-- DXVK for DirectX 9/10/11 to Vulkan translation
-- VKD3D-Proton for DirectX 12 to Vulkan
-- Mesa Vulkan drivers
-- Xvfb for headless operation
-- Helper scripts for Proton execution
-
-**Pull:** `ghcr.io/loganintech/steamcmd-proton:latest`
-
-**Why Proton over Wine?**
-- Better game compatibility with Valve's patches
-- DXVK/VKD3D for superior DirectX performance
-- Game-specific fixes included
-- More actively maintained for gaming
-
-### steamcmd-wine (Legacy)
-
-Base image for Windows game servers running via Wine. Use `steamcmd-proton` instead unless you have a specific reason to use Wine.
-
-Includes:
-- Debian Bookworm slim
-- SteamCMD
-- Wine (stable)
-- Xvfb for headless operation
-- Helper scripts for server updates and Wine execution
-
-**Pull:** `ghcr.io/loganintech/steamcmd-wine:latest`
-
-## Game Servers
-
-### StarRupture
-
-Dedicated server for the StarRupture multiplayer factory/survival game.
-
-**Pull:** `ghcr.io/loganintech/starrupture:latest`
-
-**Note:** StarRupture is very RAM hungry - can use ~22GB RAM. Allocate at least 16GB.
-
-**Ports:**
-- 7777/tcp, 7777/udp - Game port
-- 27015/udp - Query port
-
-**Environment Variables:**
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SERVER_PORT` | 7777 | Game server port |
-| `QUERY_PORT` | 27015 | Steam query port |
-| `MULTIHOME` | 0.0.0.0 | Network interface to bind |
-| `UPDATE_ON_START` | true | Update server files on startup |
-| `VALIDATE_ON_START` | false | Validate all files (slower) |
-| `SESSION_NAME` | "" | Server name (enables auto-start if set) |
-| `SAVE_GAME_NAME` | "" | Save game name (defaults to SESSION_NAME) |
-| `SAVE_GAME_INTERVAL` | 300 | Autosave interval in seconds |
-| `START_NEW_GAME` | false | Start a new game on launch |
-| `LOAD_SAVED_GAME` | false | Load existing save on launch |
-| `ADDITIONAL_ARGS` | "" | Additional command-line arguments |
-
-**Volume:** `/home/steam/server` - Server files and save data
-
----
-
-### Voyagers of Nera
-
-Dedicated server for the Voyagers of Nera multiplayer exploration game.
-
-**Pull:** `ghcr.io/loganintech/voyagers-of-nera:latest`
-
-**Ports:**
-- 7777/tcp, 7777/udp - Main game port
-- 7778/tcp, 7778/udp - Secondary game port
-
-**Environment Variables:**
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SERVER_PORT` | 7777 | Game server port |
-| `UPDATE_ON_START` | true | Update server files on startup |
-| `VALIDATE_ON_START` | false | Validate all files (slower) |
-| `HOST_SERVER_DISPLAY_NAME` | "Voyagers Server" | Server name in browser |
-| `HOST_SERVER_PASSWORD` | "" | Server password (empty = no password) |
-| `MAX_PLAYERS` | 10 | Maximum players |
-| `AUTOSAVE_TIMER_SECONDS` | 300 | Autosave interval |
-| `GATHERING_RATE_MULTIPLIER` | 1.0 | Resource gathering rate |
-| `ENEMY_DAMAGE_MULTIPLIER` | 1.0 | Enemy damage multiplier |
-| `PLAYER_DAMAGE_MULTIPLIER` | 1.0 | Player damage multiplier |
-| `DISABLE_EQUIPMENT_DURABILITY` | false | Disable equipment durability |
-| `DISABLE_DROP_ITEMS_ON_DEATH` | false | Keep items on death |
-| `EOS_OVERRIDE_HOST_IP` | "" | Override public IP for EOS |
-
-**Volume:** `/home/steam/server` - Server files and save data
-
-## Adding a New Game
-
-1. Create a new directory under `games/`:
-   ```bash
-   mkdir -p games/my-game
-   ```
-
-2. Create a Dockerfile that uses the appropriate base:
-   ```dockerfile
-   ARG BASE_REGISTRY=ghcr.io/loganintech
-   FROM ${BASE_REGISTRY}/steamcmd-wine:latest  # or steamcmd:latest for Linux
-
-   ENV STEAM_APP_ID=123456
-   # ... game-specific configuration
-
-   COPY --chmod=755 entrypoint.sh /opt/scripts/entrypoint.sh
-   ENTRYPOINT ["/opt/scripts/entrypoint.sh"]
-   ```
-
-3. Create an `entrypoint.sh` script that:
-   - Updates the game via SteamCMD (use `/opt/scripts/steamcmd-update.sh`)
-   - Configures the server
-   - Starts the server executable
-
-4. The GitHub workflow will automatically build and push the image on merge to main.
-
-## Local Development
-
-Build a base image:
 ```bash
-docker build -t steamcmd-wine:local base/steamcmd-wine/
-```
+docker build \
+  --build-arg SERVER_VERSION=1.4.5.6 \
+  --build-arg GAME_VERSION=1.4.5.6 \
+  --build-arg BUILD_TAG=1 \
+  --tag terraria-vanilla:1.4.5.6-build.1 \
+  games/terraria-vanilla
 
-Build a game image:
-```bash
-docker build -t voyagers-of-nera:local \
-  --build-arg BASE_REGISTRY=local \
-  games/voyagers-of-nera/
-```
-
-Run locally:
-```bash
-docker run -it --rm \
-  -p 7777:7777/udp -p 7777:7777/tcp \
-  -p 7778:7778/udp -p 7778:7778/tcp \
-  -v $(pwd)/server-data:/home/steam/server \
-  -e HOST_SERVER_DISPLAY_NAME="My Test Server" \
-  voyagers-of-nera:local
+docker build \
+  --build-arg SERVER_VERSION=6.1.0 \
+  --build-arg GAME_VERSION=1.4.5.6 \
+  --build-arg BUILD_TAG=1 \
+  --tag terraria-tshock:6.1.0-build.1 \
+  games/terraria-tshock
 ```
 
 ## CI/CD
 
-- **Base images** are built when files in `base/` change
-- **Game images** are built when files in `games/` change
-- All images are pushed to GHCR with tags:
-  - `latest` (main branch)
-  - `sha-<commit>` (all commits)
-  - Branch/PR names
+The game-image workflow discovers directories beneath `games/` dynamically.
+On pull requests it builds changed games without pushing. On merges to `main`,
+it builds changed games and publishes these tags to GHCR:
+
+- `latest`
+- `sha-<commit>`
+- branch or pull-request name
+- `<server-version>-build.<revision>`
+
+Use the manual `game` input to build one directory, such as
+`terraria-vanilla`, or select `rebuild_all` to enumerate and build every current
+directory beneath `games/`.
