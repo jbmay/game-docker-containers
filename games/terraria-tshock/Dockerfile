@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 # and publishes the image as <server-version>-build.<build-tag>.
 ARG SERVER_VERSION=6.1.0
 ARG GAME_VERSION=1.4.5.6
-ARG BUILD_TAG=1
+ARG BUILD_TAG=2
 ENV TSHOCK_VERSION=${SERVER_VERSION}
 ENV TERRARIA_VERSION=${GAME_VERSION}
 LABEL org.opencontainers.image.version="${SERVER_VERSION}-build.${BUILD_TAG}"
