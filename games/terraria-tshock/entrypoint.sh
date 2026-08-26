@@ -95,11 +95,7 @@ if [ -d "${PLUGIN_PATH}" ] && [ "$(ls -A ${PLUGIN_PATH} 2>/dev/null)" ]; then
 fi
 
 echo ""
-echo "Server Configuration:"
-cat "${SERVER_CONFIG}"
-echo ""
-echo "TShock Configuration:"
-cat "${TSHOCK_CONFIG}"
+echo "Server and TShock configuration files are ready."
 echo ""
 
 # Extract world path from config for status message
