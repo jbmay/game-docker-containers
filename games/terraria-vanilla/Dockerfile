@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim@sha256:99c0b25c46d0214d5a2091092e7908907dcaecd6a962cde0ac700acee222b6f3
 
 LABEL org.opencontainers.image.source="https://github.com/jbmay/game-docker-containers"
 LABEL org.opencontainers.image.description="Terraria Vanilla Dedicated Server"
@@ -6,8 +6,8 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 # Keep these defaults in sync with build.env. CI passes the values explicitly
 # and publishes the image as <server-version>-build.<build-tag>.
-ARG SERVER_VERSION=1.4.5.6
-ARG GAME_VERSION=1.4.5.6
+ARG SERVER_VERSION=1.4.5.8
+ARG GAME_VERSION=1.4.5.8
 ARG BUILD_TAG=1
 ENV TERRARIA_VERSION=${GAME_VERSION}
 LABEL org.opencontainers.image.version="${SERVER_VERSION}-build.${BUILD_TAG}"
