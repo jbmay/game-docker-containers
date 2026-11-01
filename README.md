@@ -20,6 +20,35 @@ Each image's `build.env` is the source of truth for:
 Increment `BUILD_TAG` when rebuilding the same server release after changing
 the image itself.
 
+## Automated dependency updates
+
+Install the Renovate GitHub App and explicitly select this repository (including
+when maintaining it as a fork). `renovate.json` enables reviewable PRs for:
+
+- Debian base-image digest updates for the active Terraria Dockerfiles.
+- Vanilla Terraria releases from the official dedicated-server download API.
+- TShock releases from GitHub, grouped with the compatible Terraria version
+  extracted from the latest stable TShock release's title.
+- GitHub Actions used by the image-build workflow.
+
+Server-version updates change both `build.env` and the Dockerfile defaults.
+Vanilla `SERVER_VERSION` and `GAME_VERSION` move together. TShock's
+`GAME_VERSION` follows TShock release metadata, not the independent vanilla
+release feed. Review the paired versions and .NET runtime requirements before
+merging; automerge is disabled.
+
+Renovate pins base images by digest and proposes new digests for the same
+`bookworm-slim` tag. Debian distribution upgrades are held because the TShock
+Dockerfile currently installs `libicu72`. Unused `base/` images are excluded;
+the workflow builds only `games/`.
+
+For changes that leave `SERVER_VERSION` unchanged, increment `BUILD_TAG` in
+both `build.env` and the Dockerfile before merging to publish a fresh image tag.
+Renovate does not change that packaging revision automatically. Game dependency
+PRs exercise the existing build workflow, and merging publishes the resulting
+images for downstream Zarf-package Renovate PRs to discover. Workflow-only
+updates also exercise all current game builds.
+
 ## Local builds
 
 ```bash

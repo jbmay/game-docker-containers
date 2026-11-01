@@ -1,0 +1,101 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "enabledManagers": [
+    "dockerfile",
+    "github-actions",
+    "custom.regex"
+  ],
+  "ignorePaths": [
+    "base/**"
+  ],
+  "automerge": false,
+  "pinDigests": true,
+  "customDatasources": {
+    "terraria-server": {
+      "defaultRegistryUrlTemplate": "https://terraria.org/api/get/dedicated-servers-names",
+      "format": "json",
+      "transformTemplates": [
+        "{\"releases\": [$map($distinct($), function($file) { {\"version\": $replace($file, /^terraria-server-(\\d)(\\d)(\\d)(\\d+)\\.zip$/, \"$1.$2.$3.$4\")} })]}"
+      ]
+    },
+    "tshock-terraria": {
+      "defaultRegistryUrlTemplate": "https://api.github.com/repos/Pryaxis/TShock/releases/latest",
+      "format": "json",
+      "transformTemplates": [
+        "{\"releases\": [{\"version\": $match(name, /Terraria (\\d+\\.\\d+\\.\\d+\\.\\d+)/).groups[0]}]}"
+      ]
+    }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^games\\/terraria-vanilla\\/(?:build\\.env|Dockerfile)$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)(?:ARG )?(?:SERVER_VERSION|GAME_VERSION)=(?<currentValue>[0-9.]+)"
+      ],
+      "depNameTemplate": "Terraria dedicated server",
+      "datasourceTemplate": "custom.terraria-server",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^games\\/terraria-tshock\\/(?:build\\.env|Dockerfile)$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)(?:ARG )?(?:SERVER_VERSION)=(?<currentValue>[0-9.]+)"
+      ],
+      "depNameTemplate": "Pryaxis/TShock",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v(?<version>\\d+\\.\\d+\\.\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^games\\/terraria-tshock\\/(?:build\\.env|Dockerfile)$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)(?:ARG )?(?:GAME_VERSION)=(?<currentValue>[0-9.]+)"
+      ],
+      "depNameTemplate": "TShock compatible Terraria",
+      "datasourceTemplate": "custom.tshock-terraria",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchFileNames": [
+        "games/terraria-vanilla/**"
+      ],
+      "groupName": "Terraria vanilla dependencies",
+      "groupSlug": "terraria-vanilla-dependencies"
+    },
+    {
+      "matchFileNames": [
+        "games/terraria-tshock/**"
+      ],
+      "groupName": "TShock dependencies",
+      "groupSlug": "tshock-dependencies"
+    },
+    {
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "debian"
+      ],
+      "allowedVersions": "/^bookworm-slim$/",
+      "description": "Retain Debian Bookworm for the pinned libicu72 runtime dependency; update base digests only."
+    }
+  ],
+  "prBodyNotes": [
+    "Before merging an image-only or base-digest update with unchanged SERVER_VERSION, increment BUILD_TAG in both build.env and Dockerfile for that game. Builds publish <SERVER_VERSION>-build.<BUILD_TAG>.",
+    "Keep build.env and Dockerfile defaults synchronized. Review TShock's .NET requirements and compatible Terraria release; automerge is disabled."
+  ]
+}
